@@ -1,20 +1,73 @@
 import math
 
-def load_cities(filename):
-    cities = []
-    with open(filename, "r", encoding="utf-8") as file:
-        lines = file.readlines()[1:]
-        for line in lines:
-            parts = line.split()
-            city = {
-                "id": int(parts[0]),
-                "name": parts[1],
-                "population": int(parts[2]),
-                "lat": float(parts[3]),
-                "lon": float(parts[4])
-            }
-            cities.append(city)
-    return cities
+
+class City:
+    id = 0
+    town = ""
+    population = 0
+    latitude = 0.0
+    longitude = 0.0
+
+    def __init__(self, id, town, population, latitude, longitude):
+        self.id = int(id)
+        self.town = town
+        self.population = int(population)
+        self.latitude = float(latitude)
+        self.longitude = float(longitude)
+
+    def __str__(self) -> str:
+        return str(self.town)
+
+    def __repr__(self) -> str:
+        return str(self.town)
+
+plik = open("france.txt", "r").read().split("\n")[1:]
+cities = []
+for linia in plik:
+    podzial = linia.split(" ")
+    cities += [City(podzial[0], podzial[1], podzial[2], podzial[3], podzial[4])]
+
+
+def distance(miasto1: City, miasto2: City) -> float:
+    return math.sqrt((miasto2.latitude - miasto1.latitude)**2 + (miasto2.longitude - miasto1.longitude)**2)
+
+
+
+licznik2 = 1
+
+
+def wariacje_bez_powtorzen(n, m, ob=[], wynik=[]):
+    global licznik2
+    if len(ob) == m:
+        if ob in wynik:
+            return
+        wynik += [ob]
+        print(f"{licznik2}: {ob}")
+        licznik2 += 1
+        return
+
+    for i in range(n):
+        miasto = cities[i]
+        if miasto not in ob:
+            wariacje_bez_powtorzen(n, m, ob + [miasto], wynik)
+    return wynik
+
+
+licznik = 1
+def kombinacje(n, m, ob, wynik):
+    global licznik
+    if len(ob) == m:
+        if ob in wynik:
+            return
+        wynik += [ob]
+        print(f"{licznik}: {ob}")
+        licznik += 1
+        return
+    for i in range(n):
+        miasto = cities[i]
+        if miasto not in ob:
+            kombinacje(n, m, ob + [miasto], wynik)
+    return wynik
 
 def factorial(n):
     result = 1
@@ -22,99 +75,58 @@ def factorial(n):
         result *= i
     return result
 
-def generate_permutations(elements):
-    if len(elements) == 0:
-        return [[]]
-    result = []
-    for i in range(len(elements)):
-        rest = elements[:i] + elements[i+1:]
-        for perm in generate_permutations(rest):
-            result.append([elements[i]] + perm)
-    return result
-
-def generate_combinations(elements, k):
-    if k == 0:
-        return [[]]
-    if len(elements) < k:
-        return []
-    result = []
-    for i in range(len(elements)):
-        rest = elements[i+1:]
-        for comb in generate_combinations(rest, k-1):
-            result.append([elements[i]] + comb)
-    return result
-
-def generate_multisets(elements, k):
-    if k == 0:
-        return [[]]
-    result = []
-    for i in range(len(elements)):
-        for subset in generate_multisets(elements[i:], k-1):
-            result.append([elements[i]] + subset)
-    return result
+def newton(n, k):
+    gora = factorial(n)
+    dol = factorial(k) * factorial(n-k)
+    return gora/dol
 
 
-def haversine(lat1, lon1, lat2, lon2):
-    R = 6371
-    def radians(deg):
-        return deg * math.pi / 180
-    phi1, phi2 = radians(lat1), radians(lat2)
-    dphi = radians(lat2 - lat1)
-    dlambda = radians(lon2 - lon1)
-    a = (math.sin(dphi/2))**2 + math.cos(phi1) * math.cos(phi2) * (math.sin(dlambda/2))**2
-    return 2 * R * math.asin(math.sqrt(a))
+N = int(input("Wpisz N: "))
+M = int(input("Wpisz M: "))
 
-def shortest_tsp_route(cities):
-    best_route, min_distance = None, float('inf')
-    for perm in generate_permutations(cities):
-        distance = 0
-        for i in range(len(perm) - 1):
-            distance += haversine(perm[i]['lat'], perm[i]['lon'], perm[i+1]['lat'], perm[i+1]['lon'])
-        distance += haversine(perm[-1]['lat'], perm[-1]['lon'], perm[0]['lat'], perm[0]['lon'])
-        if distance < min_distance:
-            min_distance = distance
-            best_route = perm
-    return best_route, min_distance
+# zadanie 1
+powinno = int(factorial(N)/factorial(N-M))
+if M > N:
+    powinno = 0
+#print(f"powinno byc: {powinno}")
+#wariacje_bez_powtorzen(N, M, [], [])
 
-def closest_population_subset(cities):
-    total_population = 0
-    for city in cities:
-        total_population += city['population']
-    target = total_population / 2
-    best_subset, best_diff = None, float('inf')
-    for r in range(1, len(cities) + 1):
-        for subset in generate_combinations(cities, r):
-            subset_population = 0
-            for city in subset:
-                subset_population += city['population']
-            diff = subset_population - target if subset_population > target else target - subset_population
-            if diff < best_diff:
-                best_diff, best_subset = diff, subset
-    return best_subset
+# zadanie 2
+powinno = newton(M+N-1, N-1)
+#print(f"powinno byc: {int(powinno)}")
+#kombinacje(N, M, [], [])
 
-italy_cities = load_cities("Italy.txt")
-france_cities = load_cities("France.txt")
+def trzyuz():
+    wycieczki = wariacje_bez_powtorzen(7, 5, [], [])
+    odleglosci = []
+    for i in range(len(wycieczki)):
+        ob = wycieczki[i]
+        poprz = ob[0]
+        ob_odl = 0
+        for j in range(1, len(ob)):
+            ob_odl += distance(poprz, ob[j])
+            poprz = ob[j]
+        ob.append(ob[0])
+        ob_odl += distance(poprz, ob[len(ob) - 1])
+        odleglosci.append(ob_odl)
+    zl = list(zip(wycieczki, odleglosci))
+    zl.sort(key=lambda x: x[1])
+    return zl
 
-N, M = 4, 2
-selected_cities = italy_cities[:N]
+wyniktrzecie = trzyuz()
+#print(wyniktrzecie[0])
 
-print("Permutacje:")
-for i, p in enumerate(generate_permutations(selected_cities), 1):
-    print(i, [city["name"] for city in p])
+def czwuz():
+    komb = kombinacje(N, M, [], [])
+    l = len(komb)
+    zakr = 0
+    suma = sum(map(lambda x: x.population, cities[:N]))
+    for ob in komb:
+        uni = list(set(ob))
+        ob_suma = sum(map(lambda x: x.population, uni))
+        if ob_suma >= 0.4*suma and ob_suma <= 0.6*suma:
+            zakr += 1
+    print(f"{zakr}/{l} = {zakr/l}")
 
-print("\nKombinacje:")
-for i, c in enumerate(generate_combinations(selected_cities, M), 1):
-    print(i, [city["name"] for city in c])
 
-print("\nMultizbiory:")
-for i, m in enumerate(generate_multisets(selected_cities, M), 1):
-    print(i, [city["name"] for city in m])
-
-print("\nNajkrótsza trasa (TSP):")
-best_route, min_distance = shortest_tsp_route(selected_cities)
-print("Najkrótsza trasa:", [city["name"] for city in best_route])
-print("Długość trasy:", min_distance, "km")
-
-print("\nPodzbiór miast z populacją najbliższą 50%:")
-best_subset = closest_population_subset(selected_cities)
-print("Najlepszy podzbiór:", [city["name"] for city in best_subset])
+czwuz()
